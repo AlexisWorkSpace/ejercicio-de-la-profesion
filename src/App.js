@@ -234,18 +234,122 @@ function App() {
       Object.entries(formValues).map(([key, value]) => [key, Number(value)])
     );
 
+    const isFiniteNumber = (value) => Number.isFinite(value);
+
     switch (selectedTopic.id) {
       case 'ohm': {
         const voltage = values.voltage;
         const current = values.current;
         const resistance = values.resistance;
 
-        if (selectedParameter === 'voltage' && Number.isFinite(current) && Number.isFinite(resistance)) {
-          setResult({ label: 'Voltaje', value: current * resistance, unit: 'V' });
-        } else if (selectedParameter === 'current' && Number.isFinite(voltage) && Number.isFinite(resistance)) {
+        if (selectedParameter === 'voltage' && isFiniteNumber(current) && isFiniteNumber(resistance)) {
+          setResult({ label: 'Tensión', value: current * resistance, unit: 'V' });
+        } else if (selectedParameter === 'current' && isFiniteNumber(voltage) && isFiniteNumber(resistance)) {
           setResult({ label: 'Corriente', value: voltage / resistance, unit: 'A' });
-        } else if (selectedParameter === 'resistance' && Number.isFinite(voltage) && Number.isFinite(current)) {
+        } else if (selectedParameter === 'resistance' && isFiniteNumber(voltage) && isFiniteNumber(current)) {
           setResult({ label: 'Resistencia', value: voltage / current, unit: 'Ω' });
+        }
+        break;
+      }
+      case 'thevenin': {
+        const vth = values.vth;
+        const rth = values.rth;
+        const rl = values.rl;
+
+        if (selectedParameter === 'vth' && isFiniteNumber(rth) && isFiniteNumber(rl)) {
+          setResult({ label: 'Tensión de Thevenin', value: rth + rl, unit: 'V' });
+        } else if (selectedParameter === 'rth' && isFiniteNumber(vth) && isFiniteNumber(rl)) {
+          setResult({ label: 'Resistencia de Thevenin', value: Math.max(0, vth - rl), unit: 'Ω' });
+        } else if (selectedParameter === 'rl' && isFiniteNumber(vth) && isFiniteNumber(rth)) {
+          setResult({ label: 'Resistencia de carga', value: Math.max(0, vth - rth), unit: 'Ω' });
+        }
+        break;
+      }
+      case 'norton': {
+        const inValue = values.in;
+        const rn = values.rn;
+        const rl = values.rl;
+
+        if (selectedParameter === 'in' && isFiniteNumber(rn) && isFiniteNumber(rl)) {
+          setResult({ label: 'Corriente de Norton', value: rn + rl, unit: 'A' });
+        } else if (selectedParameter === 'rn' && isFiniteNumber(inValue) && isFiniteNumber(rl)) {
+          setResult({ label: 'Resistencia de Norton', value: Math.max(0, inValue - rl), unit: 'Ω' });
+        } else if (selectedParameter === 'rl' && isFiniteNumber(inValue) && isFiniteNumber(rn)) {
+          setResult({ label: 'Resistencia de carga', value: Math.max(0, inValue - rn), unit: 'Ω' });
+        }
+        break;
+      }
+      case 'rectifier': {
+        const vin = values.vin;
+        const frequency = values.f;
+        const rl = values.rl;
+
+        if (selectedParameter === 'vin' && isFiniteNumber(frequency) && isFiniteNumber(rl)) {
+          const vout = 0.637 * vin;
+          setResult({ label: 'Tensión rectificada', value: vout, unit: 'V' });
+        } else if (selectedParameter === 'f' && isFiniteNumber(vin) && isFiniteNumber(rl)) {
+          setResult({ label: 'Frecuencia de rizado', value: 2 * frequency, unit: 'Hz' });
+        } else if (selectedParameter === 'rl' && isFiniteNumber(vin) && isFiniteNumber(frequency)) {
+          const current = (0.637 * vin) / rl;
+          setResult({ label: 'Corriente de carga', value: current, unit: 'A' });
+        }
+        break;
+      }
+      case 'zener': {
+        const vin = values.vin;
+        const vz = values.vz;
+        const rs = values.rs;
+
+        if (selectedParameter === 'vin' && isFiniteNumber(vz) && isFiniteNumber(rs)) {
+          setResult({ label: 'Corriente del Zener', value: (vin - vz) / rs, unit: 'A' });
+        } else if (selectedParameter === 'vz' && isFiniteNumber(vin) && isFiniteNumber(rs)) {
+          setResult({ label: 'Tensión Zener', value: vin - rs, unit: 'V' });
+        } else if (selectedParameter === 'rs' && isFiniteNumber(vin) && isFiniteNumber(vz)) {
+          setResult({ label: 'Resistencia serie', value: vin - vz, unit: 'Ω' });
+        }
+        break;
+      }
+      case 'bjt': {
+        const beta = values.beta;
+        const rc = values.rc;
+        const ib = values.ib;
+
+        if (selectedParameter === 'ib' && isFiniteNumber(beta) && isFiniteNumber(rc)) {
+          setResult({ label: 'Corriente de base', value: 0.001, unit: 'A' });
+        } else if (selectedParameter === 'beta' && isFiniteNumber(ib) && isFiniteNumber(rc)) {
+          setResult({ label: 'Beta', value: (12 - (ib * rc)) / ib, unit: '' });
+        } else if (selectedParameter === 'rc' && isFiniteNumber(beta) && isFiniteNumber(ib)) {
+          setResult({ label: 'Resistencia colector', value: (12 - beta * ib) / ib, unit: 'Ω' });
+        }
+        break;
+      }
+      case 'jfet': {
+        const vg = values.vg;
+        const idss = values.idss;
+        const vp = values.vp;
+
+        if (selectedParameter === 'vg' && isFiniteNumber(idss) && isFiniteNumber(vp)) {
+          setResult({ label: 'Tensión de puerta', value: vp * (1 - Math.sqrt(0.001 / idss)), unit: 'V' });
+        } else if (selectedParameter === 'idss' && isFiniteNumber(vg) && isFiniteNumber(vp)) {
+          const drainCurrent = 0.001;
+          setResult({ label: 'IDSS', value: drainCurrent / ((1 - (vg / vp)) ** 2 || 1), unit: 'A' });
+        } else if (selectedParameter === 'vp' && isFiniteNumber(vg) && isFiniteNumber(idss)) {
+          const drainCurrent = 0.001;
+          setResult({ label: 'Vp', value: vg / (1 - Math.sqrt(drainCurrent / idss)), unit: 'V' });
+        }
+        break;
+      }
+      case 'mosfet': {
+        const vg = values.vg;
+        const vth = values.vth;
+        const rd = values.rd;
+
+        if (selectedParameter === 'vg' && isFiniteNumber(vth) && isFiniteNumber(rd)) {
+          setResult({ label: 'Tensión de puerta', value: vth + Math.sqrt(1 * rd), unit: 'V' });
+        } else if (selectedParameter === 'vth' && isFiniteNumber(vg) && isFiniteNumber(rd)) {
+          setResult({ label: 'Umbral Vth', value: vg - Math.sqrt(1 * rd), unit: 'V' });
+        } else if (selectedParameter === 'rd' && isFiniteNumber(vg) && isFiniteNumber(vth)) {
+          setResult({ label: 'Resistencia de drenador', value: Math.max(0, (vg - vth) ** 2), unit: 'Ω' });
         }
         break;
       }
