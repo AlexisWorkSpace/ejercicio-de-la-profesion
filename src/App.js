@@ -364,7 +364,7 @@ function App() {
     <main className={`app-shell${isWelcomeView ? ' welcome-view' : ''}`}>
       {isWelcomeView ? (
         <section className="hero-panel welcome-hero">
-          <p className="eyebrow">Herramienta de estudio</p>
+          <p className="eyebrow">integracalc</p>
           <h1>Calculadora de circuitos electrónicos</h1>
           <p className="hero-copy">
             Inicia sesion y comienza a resolver tus circuitos aqui.
