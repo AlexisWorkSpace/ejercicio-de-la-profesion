@@ -1,13 +1,139 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import './App.css';
 
+const TOPICS = [
+  {
+    id: 'ohm',
+    title: 'Leyes de Ohm',
+    description: 'Calcula tensión, corriente y resistencia a partir de los datos del circuito.',
+    parameterOptions: [
+      { id: 'voltage', label: 'Tensión', inputs: ['current', 'resistance'] },
+      { id: 'current', label: 'Corriente', inputs: ['voltage', 'resistance'] },
+      { id: 'resistance', label: 'Resistencia', inputs: ['voltage', 'current'] },
+    ],
+    inputMap: {
+      voltage: [{ label: 'Corriente (A)', type: 'number' }, { label: 'Resistencia (Ω)', type: 'number' }],
+      current: [{ label: 'Tensión (V)', type: 'number' }, { label: 'Resistencia (Ω)', type: 'number' }],
+      resistance: [{ label: 'Tensión (V)', type: 'number' }, { label: 'Corriente (A)', type: 'number' }],
+    },
+  },
+  {
+    id: 'thevenin',
+    title: 'Teorema de Thevenin',
+    description: 'Simplifica un circuito complejo en una fuente equivalente y una resistencia.',
+    parameterOptions: [
+      { id: 'vth', label: 'Tensión de Thevenin', inputs: ['rth', 'rl'] },
+      { id: 'rth', label: 'Resistencia de Thevenin', inputs: ['vth', 'rl'] },
+      { id: 'rl', label: 'Resistencia de carga', inputs: ['vth', 'rth'] },
+    ],
+    inputMap: {
+      vth: [{ label: 'Resistencia de Thevenin (Ω)', type: 'number' }, { label: 'Resistencia de carga (Ω)', type: 'number' }],
+      rth: [{ label: 'Tensión de Thevenin (V)', type: 'number' }, { label: 'Resistencia de carga (Ω)', type: 'number' }],
+      rl: [{ label: 'Tensión de Thevenin (V)', type: 'number' }, { label: 'Resistencia de Thevenin (Ω)', type: 'number' }],
+    },
+  },
+  {
+    id: 'norton',
+    title: 'Teorema de Norton',
+    description: 'Convierte una red en una fuente de corriente equivalente con su resistencia.',
+    parameterOptions: [
+      { id: 'in', label: 'Corriente de Norton', inputs: ['rn', 'rl'] },
+      { id: 'rn', label: 'Resistencia de Norton', inputs: ['in', 'rl'] },
+      { id: 'rl', label: 'Resistencia de carga', inputs: ['in', 'rn'] },
+    ],
+    inputMap: {
+      in: [{ label: 'Resistencia de Norton (Ω)', type: 'number' }, { label: 'Resistencia de carga (Ω)', type: 'number' }],
+      rn: [{ label: 'Corriente de Norton (A)', type: 'number' }, { label: 'Resistencia de carga (Ω)', type: 'number' }],
+      rl: [{ label: 'Corriente de Norton (A)', type: 'number' }, { label: 'Resistencia de Norton (Ω)', type: 'number' }],
+    },
+  },
+  {
+    id: 'rectifier',
+    title: 'Diodos rectificadores',
+    description: 'Analiza el comportamiento de un rectificador de media onda o onda completa.',
+    parameterOptions: [
+      { id: 'vin', label: 'Tensión de entrada', inputs: ['f', 'rl'] },
+      { id: 'f', label: 'Frecuencia', inputs: ['vin', 'rl'] },
+      { id: 'rl', label: 'Resistencia de carga', inputs: ['vin', 'f'] },
+    ],
+    inputMap: {
+      vin: [{ label: 'Frecuencia (Hz)', type: 'number' }, { label: 'Resistencia de carga (Ω)', type: 'number' }],
+      f: [{ label: 'Tensión de entrada (V)', type: 'number' }, { label: 'Resistencia de carga (Ω)', type: 'number' }],
+      rl: [{ label: 'Tensión de entrada (V)', type: 'number' }, { label: 'Frecuencia (Hz)', type: 'number' }],
+    },
+  },
+  {
+    id: 'zener',
+    title: 'Diodos Zener',
+    description: 'Modela la regulación de tensión en un circuito con diodo Zener.',
+    parameterOptions: [
+      { id: 'vin', label: 'Tensión de entrada', inputs: ['vz', 'rs'] },
+      { id: 'vz', label: 'Voltaje Zener', inputs: ['vin', 'rs'] },
+      { id: 'rs', label: 'Resistencia serie', inputs: ['vin', 'vz'] },
+    ],
+    inputMap: {
+      vin: [{ label: 'Tensión Zener (V)', type: 'number' }, { label: 'Resistencia serie (Ω)', type: 'number' }],
+      vz: [{ label: 'Tensión de entrada (V)', type: 'number' }, { label: 'Resistencia serie (Ω)', type: 'number' }],
+      rs: [{ label: 'Tensión de entrada (V)', type: 'number' }, { label: 'Tensión Zener (V)', type: 'number' }],
+    },
+  },
+  {
+    id: 'bjt',
+    title: 'Transistores BJT',
+    description: 'Evalúa el punto de operación y los parámetros básicos del transistor.',
+    parameterOptions: [
+      { id: 'ib', label: 'Corriente de base', inputs: ['beta', 'rc'] },
+      { id: 'beta', label: 'Beta', inputs: ['ib', 'rc'] },
+      { id: 'rc', label: 'Resistencia colector', inputs: ['ib', 'beta'] },
+    ],
+    inputMap: {
+      ib: [{ label: 'Beta (β)', type: 'number' }, { label: 'Resistencia colector (Ω)', type: 'number' }],
+      beta: [{ label: 'Corriente de base (mA)', type: 'number' }, { label: 'Resistencia colector (Ω)', type: 'number' }],
+      rc: [{ label: 'Corriente de base (mA)', type: 'number' }, { label: 'Beta (β)', type: 'number' }],
+    },
+  },
+  {
+    id: 'jfet',
+    title: 'Transistores JFET',
+    description: 'Explora la polarización y el comportamiento del canal del JFET.',
+    parameterOptions: [
+      { id: 'vg', label: 'Tensión de puerta', inputs: ['idss', 'vp'] },
+      { id: 'idss', label: 'IDSS', inputs: ['vg', 'vp'] },
+      { id: 'vp', label: 'Vp', inputs: ['vg', 'idss'] },
+    ],
+    inputMap: {
+      vg: [{ label: 'IDSS (mA)', type: 'number' }, { label: 'Vp (V)', type: 'number' }],
+      idss: [{ label: 'Tensión de puerta (V)', type: 'number' }, { label: 'Vp (V)', type: 'number' }],
+      vp: [{ label: 'Tensión de puerta (V)', type: 'number' }, { label: 'IDSS (mA)', type: 'number' }],
+    },
+  },
+  {
+    id: 'mosfet',
+    title: 'Transistores MOSFET',
+    description: 'Calcula la zona de operación del MOSFET con los datos de polarización.',
+    parameterOptions: [
+      { id: 'vg', label: 'Tensión de puerta', inputs: ['vth', 'rd'] },
+      { id: 'vth', label: 'Umbral Vth', inputs: ['vg', 'rd'] },
+      { id: 'rd', label: 'Resistencia de drenador', inputs: ['vg', 'vth'] },
+    ],
+    inputMap: {
+      vg: [{ label: 'Umbral Vth (V)', type: 'number' }, { label: 'Resistencia de drenador (Ω)', type: 'number' }],
+      vth: [{ label: 'Tensión de puerta (V)', type: 'number' }, { label: 'Resistencia de drenador (Ω)', type: 'number' }],
+      rd: [{ label: 'Tensión de puerta (V)', type: 'number' }, { label: 'Umbral Vth (V)', type: 'number' }],
+    },
+  },
+];
+
 function App() {
-  const [userName, setUserName] = useState('');
-  const [role, setRole] = useState('student');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [topology, setTopology] = useState('series');
-  const [voltage, setVoltage] = useState('');
-  const [resistors, setResistors] = useState('');
+  const [page, setPage] = useState('welcome');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [sessionUser, setSessionUser] = useState('');
+  const [loginError, setLoginError] = useState('');
+  const [selectedTopic, setSelectedTopic] = useState(null);
+  const [selectedParameter, setSelectedParameter] = useState('');
+  const [formValues, setFormValues] = useState({});
+  const [result, setResult] = useState(null);
 
   useEffect(() => {
     const savedSession = window.sessionStorage.getItem('legis-session');
@@ -19,227 +145,283 @@ function App() {
     try {
       const parsedSession = JSON.parse(savedSession);
 
-      if (parsedSession?.userName && parsedSession?.role) {
-        setUserName(parsedSession.userName);
-        setRole(parsedSession.role);
-        setIsLoggedIn(true);
+      if (parsedSession?.userName) {
+        setSessionUser(parsedSession.userName);
+        setPage('topics');
       }
     } catch {
       window.sessionStorage.removeItem('legis-session');
     }
   }, []);
 
-  const resistorValues = useMemo(() => {
-    return resistors
-      .split(',')
-      .map((value) => Number.parseFloat(value.trim()))
-      .filter((value) => Number.isFinite(value) && value > 0);
-  }, [resistors]);
-
-  const numericVoltage = Number.parseFloat(voltage);
-  const hasValidInputs = resistorValues.length > 0 && Number.isFinite(numericVoltage) && numericVoltage > 0;
-
-  const calculations = useMemo(() => {
-    if (!hasValidInputs) {
-      return null;
-    }
-
-    if (topology === 'series') {
-      const totalResistance = resistorValues.reduce((sum, resistor) => sum + resistor, 0);
-      const current = numericVoltage / totalResistance;
-      const voltageDrops = resistorValues.map((resistor) => current * resistor);
-
-      return {
-        totalResistance,
-        current,
-        voltageDrops,
-        totalPower: numericVoltage * current,
-      };
-    }
-
-    const inverseTotal = resistorValues.reduce((sum, resistor) => sum + 1 / resistor, 0);
-    const totalResistance = 1 / inverseTotal;
-    const totalCurrent = numericVoltage / totalResistance;
-    const branchCurrents = resistorValues.map((resistor) => numericVoltage / resistor);
-
-    return {
-      totalResistance,
-      current: totalCurrent,
-      branchCurrents,
-      totalPower: numericVoltage * totalCurrent,
-    };
-  }, [hasValidInputs, numericVoltage, resistorValues, topology]);
-
   const handleLogin = (event) => {
     event.preventDefault();
 
-    const cleanedName = userName.trim();
+    const cleanedName = username.trim();
 
-    if (!cleanedName) {
+    if (cleanedName.toLowerCase() === 'admin' && password === 'pass123!') {
+      const session = { userName: cleanedName, role: 'admin' };
+      window.sessionStorage.setItem('legis-session', JSON.stringify(session));
+      setSessionUser(cleanedName);
+      setLoginError('');
+      setPage('topics');
       return;
     }
 
-    const session = { userName: cleanedName, role };
-    window.sessionStorage.setItem('legis-session', JSON.stringify(session));
-    setUserName(cleanedName);
-    setIsLoggedIn(true);
+    setLoginError('Usuario o contraseña incorrectos');
   };
 
   const handleLogout = () => {
     window.sessionStorage.removeItem('legis-session');
-    setIsLoggedIn(false);
-    setResistors('');
-    setVoltage('');
+    setSessionUser('');
+    setUsername('');
+    setPassword('');
+    setLoginError('');
+    setSelectedTopic(null);
+    setPage('welcome');
   };
 
-  const roleLabel = role === 'student' ? 'Estudiante' : 'Profesional';
+  const handleSelectTopic = (topic) => {
+    setSelectedTopic(topic);
+    setSelectedParameter('');
+    setFormValues({});
+    setResult(null);
+    setPage('calculator');
+  };
+
+  const activeInputs = selectedTopic?.inputMap?.[selectedParameter] || [];
+
+  const getFieldKey = (rawName) => {
+    const keyMap = {
+      'Tensión (V)': 'voltage',
+      'Corriente (A)': 'current',
+      'Resistencia (Ω)': 'resistance',
+      'Tensión de Thevenin (V)': 'vth',
+      'Resistencia de Thevenin (Ω)': 'rth',
+      'Resistencia de carga (Ω)': 'rl',
+      'Corriente de Norton (A)': 'in',
+      'Resistencia de Norton (Ω)': 'rn',
+      'Tensión de entrada (V)': 'vin',
+      'Frecuencia (Hz)': 'f',
+      'Tensión Zener (V)': 'vz',
+      'Resistencia serie (Ω)': 'rs',
+      'Corriente de base (mA)': 'ib',
+      'Beta (β)': 'beta',
+      'Resistencia colector (Ω)': 'rc',
+      'Tensión de puerta (V)': 'vg',
+      'IDSS (mA)': 'idss',
+      'Vp (V)': 'vp',
+      'Umbral Vth (V)': 'vth',
+      'Resistencia de drenador (Ω)': 'rd',
+    };
+
+    return keyMap[rawName] || rawName;
+  };
+
+  const handleInputChange = (event) => {
+    const { id, value } = event.target;
+    const inputName = id.split('-').slice(1).join('-');
+    const normalizedKey = getFieldKey(inputName);
+    setFormValues((current) => ({ ...current, [normalizedKey]: value }));
+  };
+
+  const calculateResult = () => {
+    if (!selectedTopic || !selectedParameter) {
+      return;
+    }
+
+    const values = Object.fromEntries(
+      Object.entries(formValues).map(([key, value]) => [key, Number(value)])
+    );
+
+    switch (selectedTopic.id) {
+      case 'ohm': {
+        const voltage = values.voltage;
+        const current = values.current;
+        const resistance = values.resistance;
+
+        if (selectedParameter === 'voltage' && Number.isFinite(current) && Number.isFinite(resistance)) {
+          setResult({ label: 'Voltaje', value: current * resistance, unit: 'V' });
+        } else if (selectedParameter === 'current' && Number.isFinite(voltage) && Number.isFinite(resistance)) {
+          setResult({ label: 'Corriente', value: voltage / resistance, unit: 'A' });
+        } else if (selectedParameter === 'resistance' && Number.isFinite(voltage) && Number.isFinite(current)) {
+          setResult({ label: 'Resistencia', value: voltage / current, unit: 'Ω' });
+        }
+        break;
+      }
+      default:
+        setResult({ label: 'Resultado', value: 'Datos pendientes', unit: '' });
+    }
+  };
+
+  const isWelcomeView = page === 'welcome';
 
   return (
-    <main className="app-shell">
-      <section className="hero-panel">
-        <p className="eyebrow">MVP de circuitos básicos</p>
-        <h1>Calculadora en React para circuitos simples</h1>
-        <p className="hero-copy">
-          Inicia sesión, elige tu perfil y calcula resistencias equivalentes, corriente total y potencia.
-        </p>
-        <div className="hero-metrics">
-          <article>
-            <strong>Login local</strong>
-            <span>Estudiante o profesional</span>
-          </article>
-          <article>
-            <strong>Serie y paralelo</strong>
-            <span>Con resistencias y tensión</span>
-          </article>
-          <article>
-            <strong>Resultados claros</strong>
-            <span>Lectura rápida para el MVP</span>
-          </article>
-        </div>
-      </section>
-
-      {!isLoggedIn ? (
-        <section className="card login-card">
-          <h2>Acceso</h2>
-          <form className="form-grid" onSubmit={handleLogin}>
-            <label>
-              Nombre
-              <input
-                type="text"
-                value={userName}
-                onChange={(event) => setUserName(event.target.value)}
-                placeholder="Tu nombre"
-                autoComplete="name"
-              />
-            </label>
-
-            <div className="role-group">
-              <span>Perfil</span>
-              <label>
-                <input
-                  type="radio"
-                  name="role"
-                  value="student"
-                  checked={role === 'student'}
-                  onChange={() => setRole('student')}
-                />
-                Estudiante
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name="role"
-                  value="professional"
-                  checked={role === 'professional'}
-                  onChange={() => setRole('professional')}
-                />
-                Profesional
-              </label>
-            </div>
-
-            <button type="submit">Entrar</button>
-          </form>
-        </section>
-      ) : (
-        <section className="workspace">
-          <div className="card session-bar">
-            <div>
-              <p className="eyebrow">Sesión activa</p>
-              <h2>{userName}</h2>
-              <span>{roleLabel}</span>
-            </div>
-            <button type="button" className="secondary-button" onClick={handleLogout}>
-              Salir
+    <main className={`app-shell${isWelcomeView ? ' welcome-view' : ''}`}>
+      {isWelcomeView ? (
+        <section className="hero-panel welcome-hero">
+          <p className="eyebrow">Herramienta de estudio</p>
+          <h1>Calculadora de circuitos electrónicos</h1>
+          <p className="hero-copy">
+            Inicia sesión con el usuario administrador y accede a una guía visual para elegir el tipo de circuito que deseas analizar.
+          </p>
+          <div className="hero-actions">
+            <button type="button" onClick={() => setPage('login')}>
+              Empezar
             </button>
           </div>
+          <div className="hero-metrics">
+            <article>
+              <strong>Login local</strong>
+              <span>Acceso fijo con admin</span>
+            </article>
+            <article>
+              <strong>Selector de temas</strong>
+              <span>Elige entre circuitos clásicos</span>
+            </article>
+            <article>
+              <strong>Espacio listo</strong>
+              <span>Para agregar dibujos e imágenes</span>
+            </article>
+          </div>
+        </section>
+      ) : (
+        <section className="content-card">
+          {page === 'login' && (
+            <div className="card login-card">
+              <p className="eyebrow">Acceso</p>
+              <h2>Inicia sesión</h2>
+              <p className="card-copy">Solo está habilitado el usuario admin con la contraseña pass123!.</p>
+              <form className="form-grid" onSubmit={handleLogin}>
+                <label htmlFor="username">
+                  Usuario
+                  <input
+                    id="username"
+                    type="text"
+                    value={username}
+                    onChange={(event) => setUsername(event.target.value)}
+                    placeholder="admin"
+                    autoComplete="username"
+                  />
+                </label>
 
-          <section className="card calculator-card">
-            <div className="section-header">
-              <h2>Calculadora de circuito</h2>
-              <p>Ingresa las resistencias separadas por coma y una tensión de fuente.</p>
+                <label htmlFor="password">
+                  Contraseña
+                  <input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    placeholder="pass123!"
+                    autoComplete="current-password"
+                  />
+                </label>
+
+                {loginError ? <p className="error-message">{loginError}</p> : null}
+
+                <button type="submit">Iniciar sesión</button>
+              </form>
             </div>
+          )}
 
-            <div className="form-grid two-columns">
-              <label>
-                Tipo de circuito
-                <select value={topology} onChange={(event) => setTopology(event.target.value)}>
-                  <option value="series">Serie</option>
-                  <option value="parallel">Paralelo</option>
-                </select>
-              </label>
-
-              <label>
-                Tensión de fuente (V)
-                <input
-                  type="number"
-                  min="0"
-                  step="any"
-                  value={voltage}
-                  onChange={(event) => setVoltage(event.target.value)}
-                  placeholder="Ej. 12"
-                />
-              </label>
-
-              <label className="full-width">
-                Resistencias (ohmios)
-                <textarea
-                  value={resistors}
-                  onChange={(event) => setResistors(event.target.value)}
-                  placeholder="Ej. 100, 220, 330"
-                  rows="4"
-                />
-              </label>
-            </div>
-
-            {calculations ? (
-              <div className="results-grid">
-                <article>
-                  <span>Resistencia equivalente</span>
-                  <strong>{calculations.totalResistance.toFixed(2)} Ω</strong>
-                </article>
-                <article>
-                  <span>{topology === 'series' ? 'Corriente del circuito' : 'Corriente total'}</span>
-                  <strong>{calculations.current.toFixed(4)} A</strong>
-                </article>
-                <article>
-                  <span>Potencia total</span>
-                  <strong>{calculations.totalPower.toFixed(2)} W</strong>
-                </article>
-                <article className="wide-result">
-                  <span>{topology === 'series' ? 'Caídas de tensión' : 'Corrientes por rama'}</span>
-                  <strong>
-                    {topology === 'series'
-                      ? calculations.voltageDrops.map((drop) => `${drop.toFixed(2)} V`).join(' | ')
-                      : calculations.branchCurrents.map((branch) => `${branch.toFixed(4)} A`).join(' | ')}
-                  </strong>
-                </article>
+          {(page === 'topics' || page === 'calculator') && (
+            <div className="workspace">
+              <div className="card session-bar">
+                <div>
+                  <p className="eyebrow">Sesión activa</p>
+                  <h2>{sessionUser || 'Administrador'}</h2>
+                  <p className="card-copy">Selecciona el tipo de circuito que quieres analizar.</p>
+                </div>
+                <button type="button" className="secondary-button" onClick={handleLogout}>
+                  Cerrar sesión
+                </button>
               </div>
-            ) : (
-              <p className="helper-text">
-                Completa una tensión positiva y al menos una resistencia positiva para ver el cálculo.
-              </p>
-            )}
-          </section>
+
+              {page === 'topics' ? (
+                <div className="card">
+                  <p className="eyebrow">Selector de circuitos</p>
+                  <h2>Selecciona el tipo de circuito</h2>
+                  <div className="topic-grid">
+                    {TOPICS.map((topic) => (
+                      <article key={topic.id} className="topic-card">
+                        <h3>{topic.title}</h3>
+                        <p>{topic.description}</p>
+                        <button type="button" onClick={() => handleSelectTopic(topic)}>
+                          Elegir
+                        </button>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+              ) : selectedTopic ? (
+                <div className="card detail-card">
+                  <div className="section-header">
+                    <div>
+                      <p className="eyebrow">Tema seleccionado</p>
+                      <h2>{selectedTopic.title}</h2>
+                      <p className="card-copy">{selectedTopic.description}</p>
+                    </div>
+                    <button type="button" className="secondary-button" onClick={() => setPage('topics')}>
+                      Cambiar tema
+                    </button>
+                  </div>
+
+                  <div className="detail-layout">
+                    <div className="diagram-box" aria-label="Espacio para dibujo del circuito">
+                      <span>Espacio para el dibujo o imagen del circuito</span>
+                      <p>Agrega aquí la figura del circuito desde tu informe PDF o una imagen propia.</p>
+                    </div>
+
+                    <form className="detail-form">
+                      <p className="eyebrow">¿Qué parámetro deseas calcular?</p>
+                      <div className="parameter-grid">
+                        {selectedTopic.parameterOptions.map((option) => (
+                          <button
+                            key={option.id}
+                            type="button"
+                            className={selectedParameter === option.id ? 'selected-parameter' : ''}
+                            onClick={() => setSelectedParameter(option.id)}
+                          >
+                            {option.label}
+                          </button>
+                        ))}
+                      </div>
+
+                      {selectedParameter ? (
+                        <>
+                          {activeInputs.map((input) => (
+                            <label key={input.label} htmlFor={`${selectedTopic.id}-${input.label}`}>
+                              {input.label}
+                              <input
+                                id={`${selectedTopic.id}-${input.label}`}
+                                type={input.type}
+                                placeholder="0"
+                                onChange={handleInputChange}
+                              />
+                            </label>
+                          ))}
+                          <button type="button" onClick={calculateResult}>
+                            Calcular
+                          </button>
+                          {result ? (
+                            <div className="result-box">
+                              <p className="eyebrow">Resultado</p>
+                              <h3>
+                                {result.label}: {Number.isFinite(result.value) ? result.value.toFixed(2) : result.value}{' '}
+                                {result.unit}
+                              </h3>
+                            </div>
+                          ) : null}
+                        </>
+                      ) : (
+                        <p className="card-copy">Elige primero el parámetro que quieres obtener.</p>
+                      )}
+                    </form>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          )}
         </section>
       )}
     </main>
