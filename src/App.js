@@ -263,7 +263,7 @@ function App() {
           <p className="eyebrow">Herramienta de estudio</p>
           <h1>Calculadora de circuitos electrónicos</h1>
           <p className="hero-copy">
-            Inicia sesión con el usuario administrador y accede a una guía visual para elegir el tipo de circuito que deseas analizar.
+            Inicia sesion y comienza a resolver tus circuitos aqui.
           </p>
           <div className="hero-actions">
             <button type="button" onClick={() => setPage('login')}>
@@ -272,16 +272,16 @@ function App() {
           </div>
           <div className="hero-metrics">
             <article>
-              <strong>Login local</strong>
-              <span>Acceso fijo con admin</span>
+              <strong>Logeate</strong>
+              <span>Create un usuario para comenzar a calcular</span>
             </article>
             <article>
-              <strong>Selector de temas</strong>
-              <span>Elige entre circuitos clásicos</span>
+              <strong>Selecciona que quieres calcular</strong>
+              <span>Podras elegir en una diersa gama de temas poder calcular</span>
             </article>
             <article>
-              <strong>Espacio listo</strong>
-              <span>Para agregar dibujos e imágenes</span>
+              <strong>Modelos equivalente</strong>
+              <span>podras ver los modelos equivalentes en caso de ser necesaro</span>
             </article>
           </div>
         </section>
